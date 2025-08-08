@@ -20,33 +20,33 @@ module CalW60 (
 
     assign o[2] = (~c0 & ~w2 & ~w1 & ~w0) | (w1 & ~w2 & w0 & ~c0 & ~c1) |
                   (~c1 & w2 & ~w1 & w0) | (c0 & w0 & ~c1 & ~w1) | 
-                  (c0 & w1 & & ~c1 & ~w0) | (c1 & ~c0 & ~w1 & ~w2) | 
-                  (c1 & ~w0 & ~w1) | (c0 & c1 & w2 & !w0) | 
+                  (c0 & w1 & ~c1 & ~w0) | (c1 & ~c0 & ~w1 & ~w2) | 
+                  (c1 & ~w0 & ~w1) | (c0 & c1 & w2 & ~w0) | 
                   (c0 & c1 & w0 & w1);
 
-    assign o[3] = (~w2 & ~c1 & `w0 & ~c0) | (~w2 & ~w1 & ~w0 & ~c1) |
+    assign o[3] = (~w2 & ~c1 & w0 & ~c0) | (~w2 & ~w1 & ~w0 & ~c1) |
                   (w2 & w1 & ~c1 & ~c0) | (w2 & w0 & ~w1 & ~c1) | 
                   (w2 & w0 & ~c0) |
-                   (w0 & w1 & ~w2 & c0 & ~c1) | (c0 & c1 & ~w0 & w1) | 
-                   (c0 & c1 & w0 & ~w1);
+                  (w0 & w1 & ~w2 & c0 & ~c1) | (c0 & c1 & ~w0 & w1) | 
+                  (c0 & c1 & w0 & ~w1);
 
     assign o[4] = (w2 & w1 & ~c1) | (w2 & w0 & ~c1) |
-     (w2 & w0 & ~w1) | (~w2 & ~w1 & ~c0) |
-    (~w2 & ~w0 & ~c1 & ~c0) | (~w2 & w1 & c1 & w0)
-    | (w2 & w1 & c1 & ~c0 & ~w0);
+                  (w2 & w0 & ~w1) | (~w2 & ~w1 & ~c0) |
+                  (~w2 & ~w0 & ~c1 & ~c0) | (~w2 & w1 & c1 & w0)
+                  | (w2 & w1 & c1 & ~c0 & ~w0);
 
     assign o[5] = (~w2 & ~c0 & ~c1) | (~w2 & ~w1 & ~w0 & ~c0)
-     | (~w2 & w1 & w0 & ~c0) | (~w2 & ~w1 & ~c1)
-    | (w2 & ~w1 & ~w0 & ~c0) | (w2 & w1 & c0)
-     | (w2 & w0 & ~w1 & c0) | (c0 & c1 & w1 & ~w0);
+                  | (~w2 & w1 & w0 & ~c0) | (~w2 & ~w1 & ~c1)
+                  | (w2 & ~w1 & ~w0 & ~c0) | (w2 & w1 & c0)
+                  | (w2 & w0 & ~w1 & c0) | (c0 & c1 & w1 & ~w0);
 
     assign o[6] =  (c0 & ~c1 & w1 & ~w2) | (c0 & w0 & ~w1 & ~w2)
-     | (c0 & ~c1 & ~w1 & ~w0 & w2) | (c1 & w1 & w2)
-    | (c1 & w0 & w2) | (~c0 & c1 & w1 & w0)
-     | (w2 & c1 & ~w0 & ~c0);
+                  | (c0 & ~c1 & ~w1 & ~w0 & w2) | (c1 & w1 & w2)
+                  | (c1 & w0 & w2) | (~c0 & c1 & w1 & w0)
+                  | (w2 & c1 & ~w0 & ~c0);
 
     assign o[7] = (c0 & c1 & ~w2) |  (c1 & ~w0 & ~w2)
-     | (c1 & ~w1 & ~w2) | (c0 & c1 & ~w1 & ~w0);
+                  | (c1 & ~w1 & ~w2) | (c0 & c1 & ~w1 & ~w0);
 
 endmodule
 
@@ -54,25 +54,26 @@ module TimeCalculator (
     input [7:0] cal_w60_out, // output : CalW60 (Cal * 60 / W)
     input gender,            // 0 = male (G=1), 1 = female (G=1.125)
     input [1:0] MET,         // MET = 1, 2, 4, 8
-    output [7:0] T       // Final workout time (in minutes)
+    output [7:0] T           // Final workout time (in minutes)
 );
     reg [7:0] Gender_output; 
     reg [7:0] Met_output;
+
     always @(*) begin
         case(gender)
             1'b0 : Gender_output = cal_w60_out;
-            1'b1 : Gender_output = cal_w60_out + (cal_w60_out >> 3) // *(9/8) = 1.125
+            1'b1 : Gender_output = cal_w60_out + (cal_w60_out >> 3); // *(9/8) = 1.125
             default : Gender_output = cal_w60_out;
         endcase
     end 
 
-    always @(*)begin
-        case(MET):
+    always @(*) begin
+        case(MET)
             2'b00 : Met_output = Gender_output;
             2'b01 : Met_output = (Gender_output >> 1); // / 2
             2'b10 : Met_output = (Gender_output >> 2); // / 4
             2'b11 : Met_output = (Gender_output >> 3); // / 8
-            default:Met_output = Gender_output;
+            default: Met_output = Gender_output;
         endcase
     end
 
@@ -100,7 +101,6 @@ module fsm_workout (
 
     reg [2:0] state, next_state;
 
-  
     parameter WORK_TIME = 6'd45;
     parameter REST_TIME = 6'd15;
 
@@ -130,7 +130,7 @@ module fsm_workout (
         endcase
     end
 
- always @(posedge clk) begin
+    always @(posedge clk) begin
         if (reset) begin
             workout_num <= 0;
             time_remain <= 0;
