@@ -177,22 +177,23 @@ module TopModule(
     input reset,
     input start,
     input skip,
-    input [1:0] Cal,    
-    input [2:0] W,      
+    input [7:0] Cal,
+    input [7:0] W,     
     input gender,        
     input [1:0] MET,     
 
     output [7:0] workout_num,
     output [5:0] time_remain,
-    output buzzer
+    output buzzer,
+    output [7:0] T
+
 );
 
     wire [7:0] resultCalW60;
-    wire [7:0] total_time;
 
     CalW60 part1Formula (
-        .Cal(Cal),
-        .W(W),
+        .Cal(Cal[1:0]),
+        .W(W[2:0]),
         .o(resultCalW60)
     );
 
@@ -200,7 +201,7 @@ module TopModule(
         .cal_w60_out(resultCalW60),
         .gender(gender),
         .MET(MET),
-        .T(total_time)
+        .T(T)
     );
 
     fsm_workout fsm_ctrl (
@@ -208,7 +209,7 @@ module TopModule(
         .reset(reset),
         .start(start),
         .skip(skip),
-        .T_input(total_time),
+        .T_input(T),
         .workout_num(workout_num),
         .time_remain(time_remain),
         .buzzer(buzzer)
