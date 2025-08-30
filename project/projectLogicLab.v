@@ -1,7 +1,7 @@
 module CalW60 (
-    input [1:0] Cal,     // c1, c0
-    input [2:0] W,       // w2, w1, w0
-    output wire [7:0] o  // o[0] to o[7]
+    input  [1:0] Cal,     // calorie class: c1,c0
+    input  [2:0] W,       // weight class:  w2,w1,w0
+    output wire [7:0] o   // encoded (Cal*60)/W buckets
 );
 
     wire c1 = Cal[1];
@@ -50,29 +50,30 @@ module CalW60 (
 
 endmodule
 
+
 module TimeCalculator (
-    input [7:0] cal_w60_out, // output : CalW60 (Cal * 60 / W)
-    input gender,            // 0 = male (G=1), 1 = female (G=1.125)
-    input [1:0] MET,         // MET = 1, 2, 4, 8
-    output [7:0] T           // Final workout time (in minutes)
+    input  [7:0] cal_w60_out, // from CalW60 (encoded)
+    input        gender,      // 0: male (x1.0), 1: female (~x1.125)
+    input  [1:0] MET,         // 00:/1, 01:/2, 10:/4, 11:/8
+    output [7:0] T            // total number of rounds
 );
     reg [7:0] Gender_output; 
     reg [7:0] Met_output;
 
     always @(*) begin
-        case(gender)
-            1'b0 : Gender_output = cal_w60_out;
-            1'b1 : Gender_output = cal_w60_out + (cal_w60_out >> 3); // *(9/8) = 1.125
-            default : Gender_output = cal_w60_out;
+        case (gender)
+            1'b0: Gender_output = cal_w60_out;                       // male
+            1'b1: Gender_output = cal_w60_out + (cal_w60_out >> 3);  // female ≈ x1.125
+            default: Gender_output = cal_w60_out;
         endcase
     end 
 
     always @(*) begin
-        case(MET)
-            2'b00 : Met_output = Gender_output;
-            2'b01 : Met_output = (Gender_output >> 1); // / 2
-            2'b10 : Met_output = (Gender_output >> 2); // / 4
-            2'b11 : Met_output = (Gender_output >> 3); // / 8
+        case (MET)
+            2'b00: Met_output = Gender_output;         // /1
+            2'b01: Met_output = (Gender_output >> 1);  // /2
+            2'b10: Met_output = (Gender_output >> 2);  // /4
+            2'b11: Met_output = (Gender_output >> 3);  // /8
             default: Met_output = Gender_output;
         endcase
     end
@@ -81,29 +82,31 @@ module TimeCalculator (
 
 endmodule
 
+
 module fsm_workout (
-    input clk,              
-    input reset,            
-    input start,             
-    input skip,              
-    input [7:0] T_input,     // Total number of workouts from TimeCalculator
-    output reg [7:0] workout_num, // Current workout index
-    output reg [5:0] time_remain, // Countdown time (0-59 seconds)
-    output reg buzzer             // Buzzer signal
+    input        clk,              // MUST be 1 Hz tick
+    input        reset,
+    input        start,
+    input        skip,
+    input  [7:0] T_input,          // number of rounds
+    output reg [7:0] workout_num,  // current round (0..T_input)
+    output reg [5:0] time_remain,  // seconds (0..59)
+    output reg       buzzer        // short pulse at edges
 );
 
-    parameter S0 = 3'b000, // Initial state before starting the exercise
+    parameter S0 = 3'b000, // IDLE (before start)
               S1 = 3'b001, // INIT_WORK
               S2 = 3'b010, // WORK
               S3 = 3'b011, // INIT_REST
               S4 = 3'b100, // REST
-              S5 = 3'b101; // DONE(Completion of exercises)
+              S5 = 3'b101; // DONE
 
     reg [2:0] state, next_state;
 
-    parameter WORK_TIME = 6'd45;
-    parameter REST_TIME = 6'd15;
+    parameter WORK_TIME = 6'd45;   // 45 seconds
+    parameter REST_TIME = 6'd15;   // 15 seconds
 
+    // State register
     always @(posedge clk) begin
         if (reset)
             state <= S0;
@@ -111,6 +114,7 @@ module fsm_workout (
             state <= next_state;
     end
 
+    // Next-state logic
     always @(*) begin
         case (state)
             S0: next_state = start ? S1 : S0;
@@ -130,13 +134,14 @@ module fsm_workout (
         endcase
     end
 
+    // Outputs / counters
     always @(posedge clk) begin
         if (reset) begin
             workout_num <= 0;
             time_remain <= 0;
-            buzzer <= 0;
+            buzzer      <= 0;
         end else begin
-            buzzer <= 0;
+            buzzer <= 0; // default
             case (state)
                 S0: begin
                     workout_num <= 0;
@@ -148,7 +153,7 @@ module fsm_workout (
                 S2: begin
                     if (skip || time_remain == 0) begin
                         workout_num <= workout_num + 1;
-                        buzzer <= 1;
+                        buzzer      <= 1;
                     end else begin
                         time_remain <= time_remain - 1;
                     end
@@ -164,7 +169,7 @@ module fsm_workout (
                 end
                 S5: begin
                     time_remain <= 0;
-                    buzzer <= 1;
+                    buzzer      <= 1;
                 end
             endcase
         end
@@ -172,31 +177,45 @@ module fsm_workout (
 
 endmodule
 
+
 module TopModule(
-    input clk,
-    input reset,
-    input start,
-    input skip,
-    input [7:0] Cal,
-    input [7:0] W,     
-    input gender,        
-    input [1:0] MET,     
+    input        clk,
+    input        reset,
+    input        start,
+    input        skip,
+    input  [1:0] Cal,      // << 2-bit per spec
+    input  [2:0] W,        // << 3-bit per spec
+    input        gender,   // G: 0=male, 1=female(1.125)
+    input  [1:0] MET,      // 00=1,01=2,10=4,11=8
 
     output [7:0] workout_num,
     output [5:0] time_remain,
-    output buzzer,
-    output [7:0] T
+    output       buzzer,
+    output [7:0] T,
 
+    // LCD signals (RW is hard-wired to 0 here)
+    output [7:0] lcd_data,
+    output       lcd_rs,
+    output       lcd_rw,
+    output       lcd_en
 );
 
     wire [7:0] resultCalW60;
+    wire [127:0] exercise_name;
+    wire [2:0] exercise_index;
+    wire buzzer_signal;
 
+    // index = workout_num % 8 (equivalent to low 3 bits)
+    assign exercise_index = workout_num[2:0];
+
+    // -------- CalW60 (only lower bits used) --------
     CalW60 part1Formula (
-        .Cal(Cal[1:0]),
-        .W(W[2:0]),
+        .Cal(Cal),       // 2-bit
+        .W(W),           // 3-bit
         .o(resultCalW60)
     );
 
+    // -------- TimeCalculator --------
     TimeCalculator partFinalFormula (
         .cal_w60_out(resultCalW60),
         .gender(gender),
@@ -204,6 +223,7 @@ module TopModule(
         .T(T)
     );
 
+    // -------- FSM controller --------
     fsm_workout fsm_ctrl (
         .clk(clk),
         .reset(reset),
@@ -212,7 +232,36 @@ module TopModule(
         .T_input(T),
         .workout_num(workout_num),
         .time_remain(time_remain),
-        .buzzer(buzzer)
+        .buzzer(buzzer_signal)
+    );
+
+    // -------- Exercise name decoder (16 chars) --------
+    ExerciseNameDecoder decoder (
+        .index(exercise_index),
+        .exercise_name(exercise_name)
+    );
+
+    // -------- LCD controller (no RW port) --------
+    LCD_Controller lcd_inst (
+        .clk(clk),
+        .reset(reset),
+        .exercise_name(exercise_name),
+        .time_remain(time_remain),
+        .lcd_data(lcd_data),
+        .lcd_rs(lcd_rs),
+        .lcd_en(lcd_en)
+    );
+
+    // RW is not used in the LCD controller: tie it low for write-only
+    assign lcd_rw = 1'b0;
+
+    // -------- Buzzer --------
+    buzzer buzzer_inst (
+        .clk(clk),            // or your divided 2kHz clock
+        .rst(reset),
+        .alarm(buzzer_signal),
+        .buzzer_out(buzzer)
     );
 
 endmodule
+
