@@ -32,7 +32,7 @@ module CalW60 (
 
     assign o[4] = (w2 & w1 & ~c1) | (w2 & w0 & ~c1) |
                   (w2 & w0 & ~w1) | (~w2 & ~w1 & ~c0) |
-                  (~w2 & ~w0 & ~c1 & ~c0) | (~w2 & w1 & c1 & w0)
+                  (~w2 & ~w0 & ~c1 & c0) | (~w2 & w1 & c1 & w0)
                   | (w2 & w1 & c1 & ~c0 & ~w0);
 
     assign o[5] = (~w2 & ~c0 & ~c1) | (~w2 & ~w1 & ~w0 & ~c0)
@@ -63,7 +63,7 @@ module TimeCalculator (
     always @(*) begin
         case (gender)
             1'b0: Gender_output = cal_w60_out;                       // male
-            1'b1: Gender_output = cal_w60_out + (cal_w60_out >> 3);  // female ≈ x1.125
+            1'b1: Gender_output = cal_w60_out + (cal_w60_out >> 3);  // female â‰ˆ x1.125
             default: Gender_output = cal_w60_out;
         endcase
     end 
