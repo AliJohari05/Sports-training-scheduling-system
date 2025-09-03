@@ -18,7 +18,7 @@ module display_driver #(
     output reg [3:0] an,      // digit enables
     output      [7:0] seg     // {dp,g,f,e,d,c,b,a} after mapping+polarity
 );
-    // ----------------- make ~1/ (REFRESH_HZ*4) tick -----------------
+
     localparam integer TICK_DIV = CLK_HZ / (REFRESH_HZ * 4);
     reg [31:0] div = 32'd0;
     reg        tick = 1'b0;
@@ -36,7 +36,7 @@ module display_driver #(
         end
     end
 
-    // ----------------- Binary(8) -> BCD -----------------
+
     wire [3:0] bcd_h, bcd_t, bcd_o;
     bin8_to_bcd b2b(.bin(T), .hundreds(bcd_h), .tens(bcd_t), .ones(bcd_o));
 
@@ -45,7 +45,7 @@ module display_driver #(
     wire [3:0] d1 = bcd_t;
     wire [3:0] d0 = bcd_o;
 
-    // ----------------- digit scan -----------------
+
     reg [1:0] sel = 2'd0;
     always @(posedge clk or posedge rst) begin
         if (rst) sel <= 2'd0;
@@ -78,7 +78,7 @@ module display_driver #(
     assign seg = (COMMON_ANODE ? ~ordered_ah : ordered_ah);
 endmodule
 
-// ---------- Double-Dabble: 8-bit binary to BCD ----------
+
 module bin8_to_bcd(
     input  [7:0] bin,
     output reg [3:0] hundreds,
