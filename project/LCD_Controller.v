@@ -16,14 +16,14 @@ module LCD_Controller(
     output reg       lcd_en
 );
 
-    // ----------------------------------------------------------------
+
     // RW is fixed low (write-only). If your board exposes RW, tie it to GND.
-    // ----------------------------------------------------------------
+    
     wire lcd_rw = 1'b0;
 
-    // ----------------------------------------------------------------
+
     // 1 ms tick generator @50 MHz  (adjust DIV for other clocks)
-    // ----------------------------------------------------------------
+   
     localparam integer DIV = 50_000 - 1; // 50,000 cycles ≈ 1 ms at 50 MHz
 
     reg [15:0] div_cnt;
@@ -44,15 +44,14 @@ module LCD_Controller(
         end
     end
 
-    // ----------------------------------------------------------------
+    
     // ASCII digits for time_remain (tens and ones)
-    // ----------------------------------------------------------------
     wire [7:0] tens_ascii = ((time_remain / 10) % 10) + 8'd48; // '0'..'5'
     wire [7:0] ones_ascii = (time_remain % 10) + 8'd48;        // '0'..'9'
 
-    // ----------------------------------------------------------------
+   
     // State machine (coded as localparams for Verilog-2001)
-    // ----------------------------------------------------------------
+
     localparam [3:0]
         S_INIT0 = 4'd0,
         S_INIT1 = 4'd1,
@@ -71,9 +70,8 @@ module LCD_Controller(
     reg [7:0] chr;              // current character to write
     reg       en_phase;         // 0: prepare data/rs, 1: pulse EN and advance
 
-    // ----------------------------------------------------------------
     // Character selection for each line (combinational)
-    // ----------------------------------------------------------------
+
     always @(*) begin
         chr = 8'h20; // default ' '
         if (state == S_WL1) begin
@@ -121,9 +119,9 @@ module LCD_Controller(
         end
     end
 
-    // ----------------------------------------------------------------
+
     // LCD command constants
-    // ----------------------------------------------------------------
+
     localparam [7:0] CMD_FUNCSET  = 8'h38; // 8-bit, 2-line, 5x8 dots
     localparam [7:0] CMD_DISPON   = 8'h0C; // display on, cursor off, blink off
     localparam [7:0] CMD_CLEAR    = 8'h01; // clear display
@@ -131,9 +129,9 @@ module LCD_Controller(
     localparam [7:0] CMD_DDRAM_L1 = 8'h80; // set DDRAM address 0x00
     localparam [7:0] CMD_DDRAM_L2 = 8'hC0; // set DDRAM address 0x40
 
-    // ----------------------------------------------------------------
+
     // Main FSM: drives RS/DATA and generates EN pulses using en_phase
-    // ----------------------------------------------------------------
+
     always @(posedge clk or posedge reset) begin
         if (reset) begin
             state    <= S_INIT0;
