@@ -208,14 +208,14 @@ module TopModule(
     // index = workout_num % 8 (equivalent to low 3 bits)
     assign exercise_index = workout_num[2:0];
 
-    // -------- CalW60 (only lower bits used) --------
+
     CalW60 part1Formula (
         .Cal(Cal),       // 2-bit
         .W(W),           // 3-bit
         .o(resultCalW60)
     );
 
-    // -------- TimeCalculator --------
+
     TimeCalculator partFinalFormula (
         .cal_w60_out(resultCalW60),
         .gender(gender),
@@ -223,7 +223,7 @@ module TopModule(
         .T(T)
     );
 
-    // -------- FSM controller --------
+
     fsm_workout fsm_ctrl (
         .clk(clk),
         .reset(reset),
@@ -235,13 +235,13 @@ module TopModule(
         .buzzer(buzzer_signal)
     );
 
-    // -------- Exercise name decoder (16 chars) --------
+
     ExerciseNameDecoder decoder (
         .index(exercise_index),
         .exercise_name(exercise_name)
     );
 
-    // -------- LCD controller (no RW port) --------
+
     LCD_Controller lcd_inst (
         .clk(clk),
         .reset(reset),
@@ -255,7 +255,7 @@ module TopModule(
     // RW is not used in the LCD controller: tie it low for write-only
     assign lcd_rw = 1'b0;
 
-    // -------- Buzzer --------
+
     buzzer buzzer_inst (
         .clk(clk),            // or your divided 2kHz clock
         .rst(reset),
