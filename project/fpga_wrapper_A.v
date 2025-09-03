@@ -23,10 +23,10 @@ module fpga_wrapper_A (
     debounce db_start (.clk(clk_fpga), .rst(1'b0), .noisy(btn_start), .clean(start));
     debounce db_skip  (.clk(clk_fpga), .rst(1'b0), .noisy(btn_skip),  .clean(skip));
 
-    // اختیاری: اگر دکمه‌ها Active-LOW هستند و debouncer خروجی Level می‌دهد:
-    wire reset = ~reset_n;  // یا اگر بالفعل Active-HIGH است همین reset_n را به عنوان reset بده
 
-    // فرکانس‌های کمکی
+    wire reset = ~reset_n;  
+
+
     wire clk_1hz, clk_2khz;
     clock_divider clkdiv (
         .clk(clk_fpga),
@@ -35,10 +35,10 @@ module fpga_wrapper_A (
         .clk_2khz(clk_2khz)
     );
 
-    // هسته‌ی پروژه (داخلش LCD و buzzer وجود دارد)
+
     wire [7:0] T;
     TopModule_FPGA core (
-        .clk   (clk_1hz),   // برای شمارش ثانیه‌ای
+        .clk   (clk_1hz),     ‌
         .reset (reset),
         .start (start),
         .skip  (skip),
@@ -50,7 +50,7 @@ module fpga_wrapper_A (
         .T     (T)
     );
 
-    // درایور 7-seg - کلاک مولتی‌پلکس: 2kHz مناسب است
+
     display_driver disp (
         .clk (clk_2khz),
         .rst (reset),
