@@ -108,10 +108,10 @@ Any form of plagiarism or code sharing outside the team violates course policy.
 ---
 
 ## 👥 Team Members
-| Name | Student ID |
+| Name | last name |
 |-----|------------|
-|     |            |
-|     |            |
+| Amin    | Agahifard           |
+|   Ali  |    Johari        |
 
 ---
 
